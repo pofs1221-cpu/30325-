@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>경제 불안정 - 사회 문제로서의 분석과 해결방안</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+    * {
+        cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="%23FFD700" stroke="%23B8860B" stroke-width="1.5"/></svg>') 8 8, auto !important;
+    }
+    body { 
+        font-family: 'Noto Sans KR', sans-serif; 
+        background-color: #f8fafc;
+        /* 배경의 허전함을 채워주는 은은한 도트(점) 패턴 */
+        background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
+        background-size: 36px 36px;
+        color: #1e293b;
+        overflow-x: hidden;
+    }
+    .fade-in-up {
+        opacity: 0;
+        transform: translateY(40px);
+        transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    }
+    .fade-in-up.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    /* 부드러운 전환 효과 */
+    .card {
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    /* 시선을 끄는 상호작용 호버 효과 */
+    .card:hover {
+        transform: translateY(-8px) scale(1.03);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        border-color: #93c5fd;
+        z-index: 10;
+        position: relative;
+    }
+    
+    /* 카드 내부 텍스트 호버 효과 */
+    .card:hover h3 {
+        color: #2563eb;
+        transition: color 0.3s ease;
+    }
+</style>
+</head>
+<body class="min-h-screen pb-24 overflow-y-auto">
+
+    <!-- Header -->
+    <header class="py-16 text-center bg-white shadow-sm mb-16">
+        <h1 class="text-4xl md:text-5xl font-bold text-slate-900 mb-4">경제 불안정</h1>
+        <p class="text-xl text-slate-500">사회 문제로서의 분석과 해결방안.</p>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6 space-y-24">
+        
+        <!-- Section 1 -->
+        <section class="fade-in-up">
+            <h2 class="text-3xl font-bold mb-8 text-blue-700 border-b-2 border-blue-200 pb-2">1. 현 사회의 상황.</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="text-4xl mb-4">🌍</div>
+                    <h3 class="text-2xl font-bold mb-4">글로벌 경제 불안정</h3>
+                    <p class="text-xl leading-relaxed text-slate-700">물가 상승과 전쟁으로 경제적 걱정 고조.<br>자산 가격 폭등 속 취업·주거 문제 심각.</p>
+                </div>
+                <div class="card bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="text-4xl mb-4">📉</div>
+                    <h3 class="text-2xl font-bold mb-4">저성장과 긴축</h3>
+                    <p class="text-xl leading-relaxed text-slate-700">2025년 한국 경제성장률 0.7% 전망.<br>GDP 대비 가계부채 105%로 세계 최고 수준.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2 -->
+        <section class="fade-in-up">
+            <h2 class="text-3xl font-bold mb-8 text-rose-700 border-b-2 border-rose-200 pb-2">2. 문제 발생의 구조적 원인</h2>
+            <div class="space-y-6">
+                <div class="card bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex items-start gap-6">
+                    <div class="text-3xl bg-rose-100 p-4 rounded-full text-rose-600 font-bold">1</div>
+                    <div>
+                        <h3 class="text-2xl font-bold mb-2">기술 변화와 노동시장 양극화</h3>
+                        <p class="text-xl text-slate-700 leading-relaxed">세계화와 인공지능 발달로 중간층 일자리가 급감하고 양극화가 심화됨.</p>
+                    </div>
+                </div>
+                <div class="card bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex items-start gap-6">
+                    <div class="text-3xl bg-rose-100 p-4 rounded-full text-rose-600 font-bold">2</div>
+                    <div>
+                        <h3 class="text-2xl font-bold mb-2">자산 가격과 실물경제의 괴리</h3>
+                        <p class="text-xl text-slate-700 leading-relaxed">근로 소득만으로는 내 집 마련이 불가능해진 자산 불평등 구조.</p>
+                    </div>
+                </div>
+                <div class="card bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex items-start gap-6">
+                    <div class="text-3xl bg-rose-100 p-4 rounded-full text-rose-600 font-bold">3</div>
+                    <div>
+                        <h3 class="text-2xl font-bold mb-2">포퓰리즘과 구조 개혁 지연</h3>
+                        <p class="text-xl text-slate-700 leading-relaxed">정치권이 문제의 원인을 외부에 전가하며 개혁을 미뤄 청년층 부담 가중.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3 -->
+        <section class="fade-in-up">
+            <h2 class="text-3xl font-bold mb-8 text-emerald-700 border-b-2 border-emerald-200 pb-2">3. 세 가지 해결 방안</h2>
+            <div class="grid grid-cols-1 gap-6">
+                <div class="card bg-emerald-50 p-8 rounded-2xl border border-emerald-100">
+                    <h3 class="text-2xl font-bold mb-3 text-emerald-900">✅ 교육 및 고용 정책 개편</h3>
+                    <p class="text-xl text-emerald-800 leading-relaxed">고교·대학 단계부터 이론 5 : 실무 5 비율로 병행하여 졸업 즉시 실무 투입 가능하도록 유도.</p>
+                </div>
+                <div class="card bg-emerald-50 p-8 rounded-2xl border border-emerald-100">
+                    <h3 class="text-2xl font-bold mb-3 text-emerald-900">✅ 부동산 및 주거 정책 개선</h3>
+                    <p class="text-xl text-emerald-800 leading-relaxed">다주택자 취득세 중과 및 단기 양도차익 과세 강화. 투기가 아닌 거주 목적의 대규모 공공주택 공급.</p>
+                </div>
+                <div class="card bg-emerald-50 p-8 rounded-2xl border border-emerald-100">
+                    <h3 class="text-2xl font-bold mb-3 text-emerald-900">✅ 다자 협력 체제 복원</h3>
+                    <p class="text-xl text-emerald-800 leading-relaxed">무역·기후·금융 불안 등 개별 국가가 해결하기 힘든 공동의 문제에 대해 국제 공조 강화.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4 -->
+        <section class="fade-in-up">
+            <h2 class="text-3xl font-bold mb-8 text-indigo-700 border-b-2 border-indigo-200 pb-2">4. 결론 및 마무리</h2>
+            <div class="card bg-indigo-600 text-white p-10 rounded-2xl shadow-lg text-center border-none">
+                <p class="text-2xl font-medium leading-relaxed mb-6">
+                    노동시장과 대학의 연계, 그리고 추가적인 주택 건설이 필수적입니다.
+                </p>
+                <p class="text-xl text-indigo-200 leading-relaxed">
+                    국가적인 금융 불안은 어느 한 나라가 홀로 해결할 수 없으며,<br>
+                    강력한 국제 협력과 내부적 구조 개혁만이 답입니다.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 스크롤 시 애니메이션 효과를 위한 Intersection Observer
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.15
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in-up').forEach(element => {
+            observer.observe(element);
+        });
+    </script>
+<script>window.parent.postMessage({ action: "ready" }, "*"); 
+ 
+window.console = new Proxy(console, {
+  get(target, prop) {
+    if (['log', 'warn', 'error'].includes(prop)) {
+      return new Proxy(target[prop], {
+        apply(fn, thisArg, args) {
+          fn.apply(thisArg, args);
+          window.parent.postMessage({ action: 'console', 
+            type: prop, 
+            args: args.map((arg) => {
+              try {
+                return JSON.stringify(arg).replace(/^["']|["']$/g, '');
+              } catch (e) {
+                return arg;
+              }
+            }) 
+          }, '*');
+        }
+      });
+    }
+    return target[prop];
+  }
+});
+</script></body>
+</html>

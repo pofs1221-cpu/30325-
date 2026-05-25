@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>고밀도·고토크 로봇 관절 액추에이터</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',sans-serif; background:#0a0e1a; overflow:hidden; width:100vw; height:100vh; }
+.slide { display:flex; flex-direction:column; position:fixed; top:0; left:0; width:100vw; height:100vh; padding:50px 60px; color:#fff; overflow-y:auto; z-index:1; pointer-events:none; visibility:hidden; opacity:0; }
+.slide.active { visibility:visible; opacity:1; justify-content:center; align-items:center; z-index:2; pointer-events:auto; }
+.slide.leaving { visibility:visible; opacity:0; z-index:2; transition:opacity 0.7s ease; pointer-events:none; }
+.slide.active.cover-up { animation:slideCoverUp 0.85s cubic-bezier(.15,.75,.25,1) both; z-index:3; pointer-events:auto; }
+@keyframes slideCoverUp {
+  0%{transform:translateY(100vh);opacity:0;}
+  25%{opacity:0.6;}
+  100%{transform:translateY(0);opacity:1;}
+}
+.bookmark-nav { position:fixed; top:16px; left:16px; z-index:9999; display:flex; flex-direction:column; gap:4px; }
+.bookmark-item { width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); color:rgba(255,255,255,.35); font-size:12px; font-weight:700; cursor:pointer; transition:all .3s ease; display:flex; align-items:center; justify-content:center; position:relative; }
+.bookmark-item:hover { background:rgba(100,180,255,.2); border-color:rgba(100,180,255,.3); color:#fff; transform:translateX(4px); }
+.bookmark-item.active { background:rgba(100,180,255,.25); border-color:#64b4ff; color:#64b4ff; box-shadow:0 0 12px rgba(100,180,255,.15); }
+.bookmark-item .tooltip { display:none; position:absolute; left:42px; top:50%; transform:translateY(-50%); background:rgba(10,14,26,.92); color:#fff; font-size:12px; font-weight:400; padding:4px 12px; border-radius:6px; white-space:nowrap; border:1px solid rgba(255,255,255,.1); pointer-events:none; }
+.bookmark-item:hover .tooltip { display:block; }
+.kbd-hint { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,.15); font-size:12px; z-index:9998; letter-spacing:1px; pointer-events:none; }
+.s1 { background:linear-gradient(135deg,#0a0e1a,#1a1f3a); }
+.s1 h1 { font-size:54px; font-weight:800; text-align:center; line-height:1.4; }
+.s1 h1 span { background:linear-gradient(90deg,#64b4ff,#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.s1 .sub { font-size:20px; color:rgba(255,255,255,.5); margin-top:20px; }
+.s1 .particle-field { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:hidden; }
+.particle { position:absolute; width:4px; height:4px; background:rgba(100,180,255,.3); border-radius:50%; animation:float 6s infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)scale(1);opacity:.3;} 50%{transform:translateY(-80px)scale(1.5);opacity:.8;} }
+
+/* ====== SLIDE 4: C-QDD VIDEO OVERLAY ====== */
+.cqdd-video-trigger {
+  cursor:pointer;
+  transition:all 0.3s;
+  position:relative;
+  display:inline-block;
+}
+.cqdd-video-trigger:hover {
+  text-shadow:0 0 20px rgba(46,204,113,0.4);
+}
+.cqdd-video-trigger .hover-hint {
+  font-size:11px;
+  font-weight:400;
+  color:rgba(46,204,113,0.5);
+  margin-left:8px;
+  opacity:0;
+  transition:opacity 0.3s;
+}
+.cqdd-video-trigger:hover .hover-hint {
+  opacity:1;
+}
+.cqdd-overlay {
+  position:fixed;
+  top:50%;
+  left:50%;
+  opacity:0;
+  width:0;
+  height:0;
+  z-index:200;
+  border-radius:16px;
+  overflow:hidden;
+  background:#0a0e1a;
+  border:2px solid rgba(46,204,113,0.15);
+  box-shadow:0 0 80px rgba(0,0,0,0.9);
+  transition:all 0.6s cubic-bezier(0.22,1,0.36,1);
+  pointer-events:none;
+  transform:translate(-50%,-50%) scale(0.9);
+}
+.cqdd-overlay.active {
+  width:70vw;
+  height:70vh;
+  opacity:1;
+  transform:translate(-50%,-50%) scale(1);
+  pointer-events:auto;
+  border-color:rgba(46,204,113,0.3);
+  box-shadow:0 0 100px rgba(46,204,113,0.15), 0 0 200px rgba(0,0,0,0.9);
+}
+.cqdd-overlay iframe,
+.cqdd-overlay .cqdd-player-inner {
+  width:100%;
+  height:100%;
+  border:none;
+}
+.cqdd-overlay .cqdd-close-hint {
+  position:absolute;
+  top:10px;
+  right:14px;
+  color:rgba(255,255,255,0.3);
+  font-size:12px;
+  z-index:5;
+  pointer-events:none;
+  background:rgba(0,0,0,0.5);
+  padding:4px 10px;
+  border-radius:12px;
+  backdrop-filter:blur(4px);
+  opacity:0;
+  transition:opacity 0.5s;
+}
+.cqdd-overlay.active .cqdd-close-hint { opacity:1; }
+
+.s3 { background:linear-gradient(135deg,#0a0e1a,#0e1a2a); padding:60px 60px 80px; }
+.s3.active { justify-content:flex-start; overflow-y:auto; }
+.s3-content { display:flex; gap:40px; width:100%; max-width:1000px; align-items:flex-start; }
+.problems-wrap { flex:1; display:flex; flex-direction:column; gap:16px; }
+.problem-card { background:rgba(255,255,255,.05); border-radius:12px; padding:16px 20px; border-left:3px solid #64b4ff; transition:.3s; }
+.problem-card .title { font-size:18px; font-weight:700; color:#64b4ff; margin-bottom:4px; }
+.problem-card .desc { font-size:16px; color:rgba(255,255,255,.7); line-height:1.5; }
+.cycloid-gif-wrap { flex:0 0 300px; height:300px; overflow:hidden; border-radius:12px; background:rgba(0,0,0,.3); position:relative; z-index:5; transition:all 0.6s cubic-bezier(.25,.1,.25,1); border:1px solid rgba(100,180,255,.1); cursor:pointer; }
+.cycloid-gif-wrap img { width:100%; height:100%; object-fit:contain; display:block; border-radius:12px; }
+.cycloid-gif-wrap:hover { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) !important; width:66.67vw !important; height:66.67vh !important; z-index:1000; border-radius:16px; box-shadow:0 0 80px rgba(100,180,255,.3), 0 0 160px rgba(100,180,255,.1); border-color:rgba(100,180,255,.3); background:#0a0e1a; }
+.cycloid-gif-wrap:hover img { border-radius:16px; }
+.s4 { background:linear-gradient(135deg,#0a0e1a,#1a0e2a); padding:60px 60px 80px; }
+.s4.active { justify-content:flex-start; overflow-y:auto; }
+.s4 h2 { font-size:32px; margin-bottom:24px; }
+.s4-content { display:flex; gap:40px; width:100%; max-width:1000px; align-items:flex-start; }
+.s4-text { flex:1; }
+.s4-text p { font-size:17px; color:rgba(255,255,255,.7); line-height:1.6; margin-bottom:12px; }
+.s5 { background:linear-gradient(135deg,#0a0e1a,#0e1a1a); }
+.s5 h2 { font-size:32px; margin-bottom:20px; }
+.comparison-table { width:100%; max-width:950px; border-collapse:collapse; font-size:15px; }
+.comparison-table th { background:rgba(255,255,255,.08); padding:10px 12px; text-align:center; font-weight:700; }
+.comparison-table td { padding:8px 12px; text-align:center; border-bottom:1px solid rgba(255,255,255,.05); }
+.comparison-table tr { transition:all 0.25s cubic-bezier(.25,.1,.25,1); }
+.comparison-table tr:hover { background:rgba(100,180,255,.12); transform:scale(1.03); box-shadow:0 0 20px rgba(100,180,255,.15); border-radius:8px; }
+.comparison-table tr:hover td { border-bottom-color:rgba(100,180,255,.2); }
+.comparison-table .g { color:#2ecc71; }
+.comparison-table .y { color:#f1c40f; }
+.comparison-table .r { color:#e74c3c; }
+.s6 { background:linear-gradient(135deg,#0a0e1a,#1a1a0e); }
+.s6 h2 { font-size:32px; margin-bottom:16px; }
+.reveal-box { background:rgba(100,180,255,.08); border:2px solid #64b4ff; border-radius:16px; padding:30px 40px; max-width:700px; text-align:center; animation:glow 2s infinite; }
+@keyframes glow { 50%{box-shadow:0 0 30px rgba(100,180,255,.15);} }
+.reveal-box .big { font-size:30px; font-weight:800; margin-bottom:12px; }
+.reveal-box p { font-size:17px; color:rgba(255,255,255,.7); line-height:1.6; }
+.effect-list { display:flex; gap:16px; margin-top:20px; flex-wrap:wrap; justify-content:center; }
+.effect-item { background:rgba(255,255,255,.05); border-radius:10px; padding:12px 20px; text-align:center; min-width:120px; }
+.effect-item .num { font-size:25px; font-weight:800; color:#a78bfa; }
+.effect-item .lbl { font-size:13px; color:rgba(255,255,255,.5); }
+.s7 { background:linear-gradient(135deg,#0a0e1a,#0e1a2a); }
+.s7 h2 { font-size:32px; margin-bottom:20px; }
+.hybrid-map { display:flex; justify-content:center; align-items:center; gap:20px; flex-wrap:wrap; max-width:900px; }
+.joint-card { background:rgba(255,255,255,.05); border-radius:12px; padding:16px; text-align:center; width:130px; transition:.3s; }
+.joint-card:hover { transform:translateY(-4px); background:rgba(255,255,255,.08); }
+.joint-card .icon { font-size:32px; margin-bottom:6px; }
+.joint-card .name { font-size:16px; font-weight:700; }
+.joint-card .type { font-size:12px; padding:3px 10px; border-radius:10px; display:inline-block; margin-top:4px; }
+.type-qdd { background:rgba(46,204,113,.2); color:#2ecc71; }
+.type-pm { background:rgba(167,139,250,.2); color:#a78bfa; }
+.type-hybrid { background:rgba(241,196,15,.2); color:#f1c40f; }
+.s8plus { background:linear-gradient(135deg,#0a0e1a,#181325); }
+.s8plus.active { justify-content:flex-start; align-items:center; padding-top:42px; padding-bottom:120px; }
+.s8plus h2 { font-size:32px; margin-bottom:18px; }
+.s8plus-wrap { width:100%; max-width:1150px; display:flex; flex-direction:column; gap:18px; min-height:calc(100vh + 220px); }
+.s8plus-top { display:flex; gap:18px; width:100%; }
+.s8plus-card { flex:1; background:rgba(255,255,255,.05); border-radius:16px; padding:22px 24px; border:1px solid rgba(255,255,255,.08); box-shadow:0 12px 30px rgba(0,0,0,.18); }
+.s8plus-card.qdd { border-top:4px solid #2ecc71; }
+.s8plus-card.pm { border-top:4px solid #a78bfa; }
+.s8plus-card h3 { font-size:21px; margin-bottom:14px; }
+.s8plus-card .subline { font-size:13px; color:rgba(255,255,255,.45); margin-bottom:14px; }
+.s8plus-list { display:flex; flex-direction:column; gap:10px; }
+.s8plus-item { background:rgba(255,255,255,.04); border-radius:10px; padding:10px 12px; }
+.s8plus-item .t { font-size:16px; font-weight:700; margin-bottom:3px; }
+.s8plus-item .d { font-size:13px; color:rgba(255,255,255,.62); line-height:1.45; }
+.s8plus-bottom { display:flex; flex-direction:column; gap:18px; margin-top:8px; padding-bottom:60px; }
+.s8plus-banner { background:linear-gradient(90deg,rgba(100,180,255,.16),rgba(167,139,250,.14)); border:1px solid rgba(100,180,255,.22); border-radius:14px; padding:14px 18px; font-size:18px; font-weight:700; text-align:center; }
+.s8plus-trends { display:flex; gap:14px; }
+.s8plus-trend { flex:1; background:rgba(255,255,255,.05); border-radius:14px; padding:16px 14px; border:1px solid rgba(255,255,255,.08); min-height:132px; }
+.s8plus-trend .k { font-size:15px; font-weight:800; color:#64b4ff; margin-bottom:8px; }
+.s8plus-trend .v { font-size:13px; color:rgba(255,255,255,.66); line-height:1.5; }
+.s8plus-techs-single { width:100%; margin-top:4px; }
+.s8plus-techs-single-title { font-size:20px; font-weight:800; color:#a78bfa; margin-bottom:14px; text-align:center; }
+.s8plus-techs-single-card { background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(100,180,255,.06)); border:2px solid rgba(167,139,250,.25); border-radius:16px; padding:22px 28px; box-shadow:0 8px 32px rgba(167,139,250,.1); }
+.s8plus-techs-single-name { font-size:22px; font-weight:800; color:#c4b5fd; margin-bottom:4px; }
+.s8plus-techs-single-sub { font-size:15px; color:rgba(255,255,255,.45); margin-bottom:14px; }
+.s8plus-techs-single-desc { font-size:15px; color:rgba(255,255,255,.7); line-height:1.65; }
+.s8plus-techs-single-desc strong { color:#fff; }
+.s8plus-techs-single-tag { display:inline-block; margin-top:14px; background:rgba(167,139,250,.12); color:#c4b5fd; font-size:13px; padding:6px 16px; border-radius:20px; border:1px solid rgba(167,139,250,.15); }
+.s8 { background:#0a0e1a; overflow:hidden; }
+#tetrisCanvas { position:absolute; top:0; left:0; width:100vw; height:100vh; }
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,.2); border-radius:2px; }
+</style>
+</head>
+<body>
+<div class="bookmark-nav" id="bookmarkNav"></div>
+<div class="kbd-hint">← ↑ ↓ → 키보드 방향키 · 북마크로 점프</div>
+
+<div class="slide s1 active" data-index="0">
+  <div class="particle-field" id="particles"></div>
+  <h1><span>고밀도·고토크</span><br>로봇 관절에 필요한 액추에이터</h1>
+  <p class="sub">로봇의 근육을 설계하는 법</p>
+</div>
+
+
+
+<div class="slide s3" data-index="1">
+  <h2 style="font-size:32px; margin-bottom:16px;">🤖 왜 고밀도·고토크 액추에이터가 필요한가?</h2>
+  <div style="width:100%; max-width:1100px; display:flex; flex-direction:column; gap:18px;">
+    <div style="display:flex; gap:18px;">
+      <div style="flex:1; background:rgba(255,255,255,.05); border-radius:12px; padding:16px 20px; border-left:3px solid #e74c3c;">
+        <div style="font-size:18px; font-weight:800; margin-bottom:8px;">⚖️ 무게 vs 출력</div>
+        <div style="font-size:14px; color:rgba(255,255,255,.7); line-height:1.5;">로봇 자체 중량(50~80kg)을 지탱하려면 기존 대비 2~3배 가벼운 액추에이터가 필수. 고밀도 설계가 없으면 <strong style="color:#fff;">보행 자체가 불가능</strong>.</div>
+      </div>
+      <div style="flex:1; background:rgba(255,255,255,.05); border-radius:12px; padding:16px 20px; border-left:3px solid #f1c40f;">
+        <div style="font-size:18px; font-weight:800; margin-bottom:8px;">⚡ 순간 고토크</div>
+        <div style="font-size:14px; color:rgba(255,255,255,.7); line-height:1.5;">동적 동작 시 관절당 <strong style="color:#fff;">200~400Nm</strong> 부하. 기존 감속기는 순간 충격에서 기어 이탈·모터 소손 발생.</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:18px;">
+      <div style="flex:1; background:rgba(255,255,255,.05); border-radius:12px; padding:16px 20px; border-left:3px solid #3498db;">
+        <div style="font-size:18px; font-weight:800; margin-bottom:8px;">🔋 에너지 효율</div>
+        <div style="font-size:14px; color:rgba(255,255,255,.7); line-height:1.5;">마찰열 최소화 + 역구동성으로 중력 보상 → <strong style="color:#fff;">같은 배터리로 가동 시간 2배↑</strong>.</div>
+      </div>
+      <div style="flex:1; background:rgba(255,255,255,.05); border-radius:12px; padding:16px 20px; border-left:3px solid #a78bfa;">
+        <div style="font-size:18px; font-weight:800; margin-bottom:8px;">🧩 폼팩터 제약</div>
+        <div style="font-size:14px; color:rgba(255,255,255,.7); line-height:1.5;">관절 내경(Ø50~80mm)에 모든 부품을 집약. <strong style="color:#fff;">부피당 출력 밀도</strong>가 핵심 경쟁력.</div>
+      </div>
+    </div>
+    <div style="margin-top:6px; background:linear-gradient(90deg,rgba(231,76,60,.1),rgba(167,139,250,.1)); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:10px 16px; text-align:center; font-size:15px; font-weight:600;">
+      📌 <span style="color:#64b4ff;">고밀도·고토크는 선택이 아니라 생존 조건</span>
+    </div>
+  </div>
+</div>
+
+<div class="slide s4" data-index="2">
+  <h2 style="font-size:32px; margin-bottom:14px;">⚙️ 어떻게 가능하게 설계하는가?</h2>
+  <div style="width:100%; max-width:1100px; display:flex; flex-direction:column; gap:18px;">
+    <div style="display:flex; gap:18px;">
+      <div style="flex:1; background:rgba(46,204,113,.06); border-radius:12px; padding:16px 20px; border:1px solid rgba(46,204,113,.2);">
+        <div style="font-size:18px; font-weight:800; color:#2ecc71; margin-bottom:10px;" class="cqdd-video-trigger" id="cQddTrigger">
+            🔄 C-QDD 설계 <span class="hover-hint">▶ 토크 한계 영상 보기</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="background:rgba(255,255,255,.04); border-radius:8px; padding:10px 14px;">
+              <div style="font-size:14px; font-weight:700; margin-bottom:4px;">① 저감속비 + 고토크 밀도</div>
+              <div style="font-size:13px; color:rgba(255,255,255,.65);">감속비 6:1~10:1 → 마찰열 ↓, 다중 접촉으로 <strong style="color:#fff;">토크 밀도 2배↑</strong></div>
+            </div>
+            <div style="background:rgba(255,255,255,.04); border-radius:8px; padding:10px 14px;">
+              <div style="font-size:14px; font-weight:700; margin-bottom:4px;">② 역구동성</div>
+              <div style="font-size:13px; color:rgba(255,255,255,.65);">외부 충격 시 모터가 밀리며 흡수. <strong style="color:#fff;">전류 감지로 충격 대응</strong>, 별도 센서 불필요</div>
+            </div>
+            <div style="background:rgba(255,255,255,.04); border-radius:8px; padding:10px 14px;">
+              <div style="font-size:14px; font-weight:700; margin-bottom:4px;">③ 전류 기반 토크 추정</div>
+              <div style="font-size:13px; color:rgba(255,255,255,.65);">센서レス 제어 → <strong style="color:#fff;">부품 ↓·신뢰성 ↑·응답 ↑</strong></div>
+            </div>
+          </div>
+          <!-- C-QDD Video Overlay -->
+          <div class="cqdd-overlay" id="cQddOverlay">
+            <div class="cqdd-close-hint">⏺ 호버 해제 시 일시정지</div>
+            <div class="cqdd-player-inner" id="cQddPlayerContainer"></div>
+          </div>
+      </div>
+      <div style="flex:1; background:rgba(167,139,250,.06); border-radius:12px; padding:16px 20px; border:1px solid rgba(167,139,250,.2);">
+        <div style="font-size:18px; font-weight:800; color:#a78bfa; margin-bottom:10px;">🧲 PM 통합 설계</div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="background:rgba(255,255,255,.04); border-radius:8px; padding:10px 14px;">
+            <div style="font-size:14px; font-weight:700; margin-bottom:4px;">① Halbach 배열 자기 회로</div>
+            <div style="font-size:13px; color:rgba(255,255,255,.65);">자석 패턴 배열로 자기장 집중 → <strong style="color:#fff;">자기장 세기 30%↑</strong>, 누설 최소화</div>
+          </div>
+          <div style="background:rgba(255,255,255,.04); border-radius:8px; padding:10px 14px;">
+            <div style="font-size:14px; font-weight:700; margin-bottom:4px;">② ST-SMC 제어</div>
+            <div style="font-size:13px; color:rgba(255,255,255,.65);">슬라이딩 모드 + 초킹 억제 → <strong style="color:#fff;">정밀 힘 제어 + 극한 안정성</strong></div>
+          </div>
+          <div style="background:rgba(255,255,255,.04); border-radius:8px; padding:10px 14px;">
+            <div style="font-size:14px; font-weight:700; margin-bottom:4px;">③ 일체형 모듈</div>
+            <div style="font-size:13px; color:rgba(255,255,255,.65);">모터·감속기·센서·드라이브 완전 패키징 → <strong style="color:#fff;">배선↓·조립↓·열 설계↑</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; gap:18px; margin-top:6px;">
+      <div style="flex:1; background:rgba(255,255,255,.04); border-radius:8px; padding:12px 16px; text-align:center;">
+        <span style="font-size:20px; font-weight:800; color:#2ecc71;">64.21</span>
+        <span style="font-size:12px; color:rgba(255,255,255,.5);"> Nm/kg 토크 밀도</span>
+      </div>
+      <div style="flex:1; background:rgba(255,255,255,.04); border-radius:8px; padding:12px 16px; text-align:center;">
+        <span style="font-size:20px; font-weight:800; color:#a78bfa;">125</span>
+        <span style="font-size:12px; color:rgba(255,255,255,.5);"> kg 정적 지지</span>
+      </div>
+      <div style="flex:1; background:rgba(255,255,255,.04); border-radius:8px; padding:12px 16px; text-align:center;">
+        <span style="font-size:20px; font-weight:800; color:#f1c40f;">10:1</span>
+        <span style="font-size:12px; color:rgba(255,255,255,.5);"> 목표 기어비</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide s5" data-index="3">
+  <h2>📊 액추에이터 3종 비교</h2>
+  <table class="comparison-table">
+    <tr><th>항목</th><th>기존 (유성+DC)</th><th>사이클로이달-QDD</th><th>PM 통합</th></tr>
+    <tr><td>토크 밀도 (Nm/kg)</td><td class="y">~25</td><td class="g">~50</td><td class="g">~62</td></tr>
+    <tr><td>역구동성</td><td class="r">낮음</td><td class="g">높음</td><td class="y">중간</td></tr>
+    <tr><td>충격 흡수</td><td class="r">취약</td><td class="g">우수</td><td class="y">보통</td></tr>
+    <tr><td>정밀 위치 제어</td><td class="y">보통</td><td class="y">양호</td><td class="g">매우 우수</td></tr>
+    <tr><td>열 관리</td><td class="r">취약</td><td class="g">우수</td><td class="g">우수</td></tr>
+    <tr><td>극한 환경 내성</td><td class="r">취약</td><td class="y">보통</td><td class="g">우수</td></tr>
+    <tr><td>연속 토크 유지</td><td class="r">낮음</td><td class="g">높음</td><td class="g">높음</td></tr>
+    <tr><td>제어 복잡도</td><td class="g">낮음</td><td class="y">중간</td><td class="r">높음</td></tr>
+    <tr><td>제조 비용</td><td class="g">낮음</td><td class="y">중간</td><td class="r">높음</td></tr>
+    <tr><td style="font-weight:700;">최적 산업군</td><td>단순 반복 작업</td><td>보행·재난구조</td><td>정밀자동화·극한환경</td></tr>
+  </table>
+</div>
+
+<div class="slide s6" data-index="4">
+  <h2>💡 반전</h2>
+  <div class="reveal-box">
+    <div class="big">⚡ QDD와 PM은 적이 아니라 협력자다!</div>
+    <p>사이클로이달-QDD는 <strong>충격 흡수와 역구동성</strong>에서,<br>PM 통합 액추에이터는 <strong>정밀도와 환경 내성</strong>에서 강점.<br><br>정답은 <strong>"하나만 고르는 것"이 아니라 목적에 맞게 조합하는 것"</strong>입니다.</p>
+  </div>
+  <div class="effect-list">
+    <div class="effect-item"><div class="num">+40%</div><div class="lbl">충격 흡수 개선<br>(QDD 적용부)</div></div>
+    <div class="effect-item"><div class="num">+35%</div><div class="lbl">정밀도 향상<br>(PM 적용부)</div></div>
+    <div class="effect-item"><div class="num">+60%</div><div class="lbl">연속 동작 시간 증가<br>(열 부하 분산)</div></div>
+  </div>
+</div>
+
+<div class="slide s7" data-index="5">
+  <h2>🔧 하이브리드 설계 가이드</h2>
+  <div class="hybrid-map">
+    <div class="joint-card"><div class="icon">🦶</div><div class="name">발목</div><div class="type type-qdd">QDD</div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;">충격 흡수 최우선</div></div>
+    <div class="joint-card"><div class="icon">🦵</div><div class="name">무릎</div><div class="type type-qdd">QDD</div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;">역구동성 중요</div></div>
+    <div class="joint-card"><div class="icon">🦿</div><div class="name">엉덩이</div><div class="type type-hybrid">하이브리드</div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;">토크+정밀도</div></div>
+    <div class="joint-card"><div class="icon">💪</div><div class="name">어깨</div><div class="type type-pm">PM</div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;">정밀 조작</div></div>
+    <div class="joint-card"><div class="icon">🦾</div><div class="name">팔꿈치</div><div class="type type-pm">PM</div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;">연속 토크 유지</div></div>
+    <div class="joint-card"><div class="icon">✋</div><div class="name">손목</div><div class="type type-pm">PM</div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;">미세 힘 제어</div></div>
+    <div class="joint-card"><div class="icon">🧠</div><div class="name">제어기</div><div class="type type-hybrid">SW 융합</div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;">ML + SMC</div></div>
+  </div>
+  <div style="display:flex;gap:16px;margin-top:20px;font-size:13px;">
+    <span><span style="color:#2ecc71;">●</span> QDD — 하체(충격·보행)</span>
+    <span><span style="color:#a78bfa;">●</span> PM — 상체(정밀·조작)</span>
+    <span><span style="color:#f1c40f;">●</span> 하이브리드 — 복합 기능</span>
+  </div>
+</div>
+
+<div class="slide s8plus" data-index="6">
+  <h2>⚠️ 두 기술의 명확한 단점 & 가장 최신 설계 트렌드</h2>
+  <div class="s8plus-wrap">
+    <div class="s8plus-top">
+      <div class="s8plus-card qdd">
+        <h3>🟢 사이클로이달-QDD의 명확한 단점</h3>
+        <div class="subline">고토크·역구동성은 강하지만, 설계와 제어가 쉽지 않다</div>
+        <div class="s8plus-list">
+          <div class="s8plus-item"><div class="t">토크 리플·진동</div><div class="d">사이클로이드 특유의 접촉 특성 때문에 저속 구간과 방향 전환 시 진동·소음 관리가 어렵습니다.</div></div>
+          <div class="s8plus-item"><div class="t">제조 공차 민감성</div><div class="d">핀, 디스크, 베어링 정밀도가 조금만 흔들려도 효율·백래시·내구성이 빠르게 나빠집니다.</div></div>
+          <div class="s8plus-item"><div class="t">제어 난도 상승</div><div class="d">낮은 감속비의 장점만큼 전류 제어, 토크 추정, 마찰 보상 성능이 부족하면 오히려 불안정해집니다.</div></div>
+          <div class="s8plus-item"><div class="t">초소형 관절엔 불리할 수 있음</div><div class="d">손목·손가락처럼 매우 작고 얇은 관절에서는 패키징과 조립성이 하모닉 계열보다 불리할 수 있습니다.</div></div>
+        </div>
+      </div>
+      <div class="s8plus-card pm">
+        <h3>🟣 PM 통합의 명확한 단점</h3>
+        <div class="subline">고출력·고정밀에 유리하지만, 비용과 열·자석 리스크가 따라온다</div>
+        <div class="s8plus-list">
+          <div class="s8plus-item"><div class="t">원가와 공급망 의존</div><div class="d">희토류 자석 성능이 좋을수록 가격과 공급망 리스크가 커져 대량 양산에서 부담이 됩니다.</div></div>
+          <div class="s8plus-item"><div class="t">고온 탈자 리스크</div><div class="d">열 설계가 부족하면 영구자석 성능 저하가 누적되어 장기 출력 안정성이 흔들릴 수 있습니다.</div></div>
+          <div class="s8plus-item"><div class="t">충격 대응은 구조 의존</div><div class="d">PM 모터 자체가 충격을 흡수해주지는 않으므로 감속기·프레임·베어링 설계가 약하면 관절 수명이 짧아집니다.</div></div>
+          <div class="s8plus-item"><div class="t">통합할수록 유지보수 난도 증가</div><div class="d">모터·센서·드라이브를 깊게 묶을수록 모듈 교체는 편하지만 내부 단품 수리와 열 분리가 어려워집니다.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="s8plus-bottom">
+      <div class="s8plus-banner">최신 추세의 핵심은 <span style="color:#64b4ff;">단일 최고 기술</span>이 아니라 <span style="color:#a78bfa;">부위별 최적화 + 전기식 일체형 모듈 + 소프트웨어 보정</span>입니다.</div>
+      <div class="s8plus-techs-single">
+        <div class="s8plus-techs-single-title">🔬 가장 최신 기술: 통합형 스마트 조인트 모듈</div>
+        <div class="s8plus-techs-single-card">
+          <div class="s8plus-techs-single-name">통합형 스마트 조인트 (Integrated Smart Joint Module)</div>
+          <div class="s8plus-techs-single-sub">모터 + 감속기 + 토크센서 + 엔코더 + 브레이크 + 드라이브 일체형</div>
+          <div class="s8plus-techs-single-desc">
+            2025~2026년 인간형 로봇(Figure 02, Tesla Optimus Gen 3, Unitree H1 등)의 주력 설계 철학. 하나의 모듈로 배선·조립·유지보수를 극도로 단순화하고, SW 보정(전류 기반 토크 추정, 마찰·열 보상)으로 기계적 공차를 상쇄. <strong>밀폐형 구조 + 열 경로 내장 + 페일세이프 브레이크</strong>를 기본 탑재하며, 상지는 고감속비(하모닉 계열), 하지는 저감속비(QDD·사이클로이드 계열)로 부위별 최적화하는 것이 현재 가장 앞선 접근법.
+          </div>
+          <div class="s8plus-techs-single-tag">최신 적용: Figure 02 · Tesla Optimus Gen 3 · Unitree H1 · Boston Dynamics Atlas</div>
+        </div>
+      </div>
+      <div class="s8plus-trends">
+        <div class="s8plus-trend"><div class="k">1. 전기식 일체형 스마트 조인트</div><div class="v">모터·감속기·엔코더·토크센서·브레이크·드라이브를 하나의 모듈로 묶어 배선, 조립, 진단을 단순화합니다.</div></div>
+        <div class="s8plus-trend"><div class="k">2. 부위별 액추에이터 이원화</div><div class="v">상지는 정밀 조작 중심(하모닉·PM), 하지는 충격 대응 중심(QDD·사이클로이드·SEA)으로 나누어 혼합 적용합니다.</div></div>
+        <div class="s8plus-trend"><div class="k">3. SW 보정 기반 고성능화</div><div class="v">전류 기반 토크 추정, 마찰·리플 보상, 러닝 기반 추정기로 기계적 약점을 소프트웨어로 상쇄하는 방향이 강해지고 있습니다.</div></div>
+        <div class="s8plus-trend"><div class="k">4. 열·안전 내장 설계</div><div class="v">최신 관절은 단순 고출력보다 연속 토크 유지, 열 경로 설계, 과부하 감지, 페일세이프 브레이크까지 함께 최적화합니다.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide s8" data-index="7">
+  <canvas id="tetrisCanvas"></canvas>
+</div>
+
+<script>
+let currentSlide = 0;
+const slides = document.querySelectorAll('.slide');
+const totalSlides = slides.length;
+const BOOKMARK_LABELS = ['도입','QDD','PM','비교','반전','가이드','단점·트렌드','소감'];
+
+const bookmarkNav = document.getElementById('bookmarkNav');
+const bookmarks = [];
+for(let i=0; i<totalSlides; i++){
+  const el = document.createElement('div');
+  el.className = 'bookmark-item' + (i===0 ? ' active' : '');
+  el.textContent = i+1;
+  el.innerHTML += '<span class="tooltip">' + BOOKMARK_LABELS[i] + '</span>';
+  el.addEventListener('click', function(){ goToSlide(i); });
+  bookmarkNav.appendChild(el);
+  bookmarks.push(el);
+}
+
+document.addEventListener('keydown', function(e){
+  if(e.key === 'ArrowRight' || e.key === 'ArrowDown') goToSlide(currentSlide+1);
+  if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') goToSlide(currentSlide-1);
+});
+
+function goToSlide(idx){
+  if(idx < 0 || idx >= totalSlides || idx === currentSlide) return;
+  const prevSlide = slides[currentSlide];
+  const newSlide = slides[idx];
+  
+  /* Close any active video overlays on slide change */
+  document.querySelectorAll('.cqdd-overlay.active').forEach(function(o){ o.classList.remove('active'); });
+  
+  /* Previous slide: fade out, stay visible behind */
+  prevSlide.classList.remove('cover-up');
+  prevSlide.classList.add('leaving');
+  
+  /* New slide: slide up from below to cover */
+  newSlide.classList.remove('active', 'cover-up', 'leaving');
+  void newSlide.offsetWidth;
+  newSlide.classList.add('active', 'cover-up');
+  
+  bookmarks[currentSlide].classList.remove('active');
+  bookmarks[idx].classList.add('active');
+  
+  const prevIdx = currentSlide;
+  currentSlide = idx;
+  window.dispatchEvent(new CustomEvent('slidechange', { detail: { index: idx } }));
+  
+  setTimeout(function(){
+    newSlide.classList.remove('cover-up');
+    prevSlide.classList.remove('active', 'leaving');
+  }, 1000);
+}
+
+/* Particles */
+(function(){ const c=document.getElementById('particles'); if(!c)return; for(let i=0;i<40;i++){ const p=document.createElement('div'); p.className='particle'; p.style.left=Math.random()*100+'%'; p.style.top=Math.random()*100+'%'; p.style.animationDelay=Math.random()*6+'s'; p.style.width=p.style.height=(2+Math.random()*4)+'px'; c.appendChild(p); } })();
+
+/* ====== SLIDE 4: C-QDD YOUTUBE VIDEO PLAYER ====== */
+(function(){
+  var tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  var firstScript = document.getElementsByTagName('script')[0];
+  firstScript.parentNode.insertBefore(tag, firstScript);
+})();
+
+var cqddPlayer = null;
+var cqddPlayerReady = false;
+
+function onYouTubeIframeAPIReady() {
+  var container = document.getElementById('cQddPlayerContainer');
+  if(!container) return;
+  cqddPlayer = new YT.Player('cQddPlayerContainer', {
+    height: '100%',
+    width: '100%',
+    videoId: 'BxWcG8cRxpY',
+    playerVars: {
+      'autoplay': 0,
+      'controls': 0,
+      'mute': 1,
+      'rel': 0,
+      'showinfo': 0,
+      'modestbranding': 1,
+      'playsinline': 1,
+      'iv_load_policy': 3
+    },
+    events: {
+      'onReady': function(e) {
+        cqddPlayerReady = true;
+        e.target.pauseVideo();
+      }
+    }
+  });
+}
+
+// Hover trigger on C-QDD text
+var cqddHoverTimer = null;
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    var trigger = document.getElementById('cQddTrigger');
+    var overlay = document.getElementById('cQddOverlay');
+    if(!trigger || !overlay) return;
+    
+    trigger.addEventListener('mouseenter', function(){
+      clearTimeout(cqddHoverTimer);
+      overlay.classList.add('active');
+      if(cqddPlayer && cqddPlayerReady) { cqddPlayer.playVideo(); }
+    });
+    
+    overlay.addEventListener('mouseleave', function(){
+      cqddHoverTimer = setTimeout(function(){
+        overlay.classList.remove('active');
+        if(cqddPlayer && cqddPlayerReady) { cqddPlayer.pauseVideo(); }
+      }, 300);
+    });
+    
+    overlay.addEventListener('mouseenter', function(){
+      clearTimeout(cqddHoverTimer);
+    });
+    
+    // Pause when leaving this slide
+    window.addEventListener('slidechange', function(e) {
+      if(e.detail.index !== 2 && cqddPlayer && cqddPlayerReady) {
+        overlay.classList.remove('active');
+        cqddPlayer.pauseVideo();
+      }
+    });
+  }, 1500);
+});
+
+/* TETRIS */
+(function(){
+  const canvas = document.getElementById('tetrisCanvas'); if(!canvas) return;
+  const ctx = canvas.getContext('2d'); canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  const W = canvas.width, H = canvas.height;
+  const lines = ["고밀도·고토크는 단순한 부품이 아니라 로봇의 근육과 두뇌였다","QDD와 PM은 적이 아니라 협력자였다","HW와 SW의 융합이 진정한 혁신을 만든다","이제 나도 로봇의 근육을 설계할 수 있다!"];
+  let blocks = [];
+  lines.forEach(function(line, li){
+    const wds = line.split(' ');
+    wds.forEach(function(w, wi){
+      blocks.push({
+        text: w,
+        targetX: W/2 - (line.length*8) + wds.slice(0,wi).join(' ').length*16 + (wi*4),
+        targetY: H-350 + li*40,
+        x: Math.random()*W, y: -100-Math.random()*600-li*80,
+        rot: Math.random()*6-3, rotSpeed: (Math.random()-.5)*.1,
+        speedY: .5+Math.random()*.8, speedX: (Math.random()-.5)*.3,
+        delay: li*15+wi*4, age:0, landed:false, wobble: Math.random()*6, wobbleSpeed: .03+Math.random()*.05
+      });
+    });
+  });
+  let frame = 0;
+  function draw(){
+    frame++;
+    ctx.fillStyle = 'rgba(10,14,26,0.3)';
+    ctx.fillRect(0,0,W,H);
+    blocks.forEach(function(b){
+      if(b.age < b.delay){ b.age++; return; }
+      const dx = b.targetX - b.x, dy = b.targetY - b.y;
+      b.x += dx*0.02 + b.speedX;
+      b.y += dy*0.02 + b.speedY;
+      b.rot += b.rotSpeed;
+      b.speedY *= .98; b.speedX *= .98;
+      b.wobble += b.wobbleSpeed;
+      if(Math.abs(dx) < 1 && Math.abs(dy) < 1) b.landed = true;
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rot + Math.sin(b.wobble)*0.1);
+      const hue = (blocks.indexOf(b)*37) % 360;
+      ctx.fillStyle = `hsla(${hue},70%,50%,0.85)`;
+      ctx.shadowColor = `hsla(${hue},70%,60%,0.3)`;
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.roundRect(-b.text.length*6-15, -14, b.text.length*12+30, 28, 6);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(b.text, 0, 5);
+      ctx.restore();
+    });
+    if(frame < 600) requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
+    this.moveTo(x+r,y); this.lineTo(x+w-r,y);
+    this.quadraticCurveTo(x+w,y, x+w,y+r);
+    this.lineTo(x+w,y+h-r);
+    this.quadraticCurveTo(x+w,y+h, x+w-r,y+h);
+    this.lineTo(x+r,y+h);
+    this.quadraticCurveTo(x,y+h, x,y+h-r);
+    this.lineTo(x,y+r);
+    this.quadraticCurveTo(x,y, x+r,y);
+  };
+}
+</script>
+<script>window.parent.postMessage({ action: "ready" }, "*"); 
+ 
+window.console = new Proxy(console, {
+  get(target, prop) {
+    if (['log', 'warn', 'error'].includes(prop)) {
+      return new Proxy(target[prop], {
+        apply(fn, thisArg, args) {
+          fn.apply(thisArg, args);
+          window.parent.postMessage({ action: 'console', 
+            type: prop, 
+            args: args.map((arg) => {
+              try {
+                return JSON.stringify(arg).replace(/^["']|["']$/g, '');
+              } catch (e) {
+                return arg;
+              }
+            }) 
+          }, '*');
+        }
+      });
+    }
+    return target[prop];
+  }
+});
+</script></body>
+</html>
